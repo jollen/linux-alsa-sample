@@ -1,6 +1,8 @@
-obj-m := snd_pcm_pi_i2s.o
-
 CONFIG_MODULE_SIG=n
+CONFIG_MODULE_SIG_ALL=n
+
+obj-m := snd_pcm_pi_i2s.o plat_dev_pi_i2s.o
+
 KDIR := /usr/src/linux-headers-3.13.0-74-generic
 
 PWD := $(shell pwd)

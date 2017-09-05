@@ -118,6 +118,8 @@ static int snd_mychip_capture_close(struct snd_pcm_substream *substream)
 static int snd_mychip_pcm_hw_params(struct snd_pcm_substream *substream,
                              struct snd_pcm_hw_params *hw_params)
 {
+     	printk(KERN_INFO "snd_mychip_pcm_hw_params: \n");
+
         return snd_pcm_lib_malloc_pages(substream,
                                    params_buffer_bytes(hw_params));
 }
@@ -217,3 +219,47 @@ static int snd_mychip_new_pcm(struct mychip *chip)
         /* pre-allocation of buffers */
         return 0;
 }
+
+/******** Platform Driver ********/
+
+static int snd_pi_i2s_probe(struct platform_device *devptr)
+{
+	printk(KERN_INFO "snd_pi_i2s_driver registered.\n");
+	return 0;
+}
+
+static int snd_pi_i2s_remove(struct platform_device *devptr)
+{
+	printk(KERN_INFO "snd_pi_i2s_driver removed.\n");
+	return 0;
+}
+
+#define SND_PI_I2S_DRIVER	"snd_pi_i2s_pcm"
+
+static struct platform_driver snd_pi_i2s_driver = {
+    .probe = snd_pi_i2s_probe,
+    .remove = snd_pi_i2s_remove,
+    .driver = {
+        .name = SND_PI_I2S_DRIVER
+    },
+};
+
+static int __init alsa_card_pi_i2s_init(void)
+{
+	int  cards, err = 1;
+
+	err = platform_driver_register(&snd_pi_i2s_driver);
+	if (err < 0)
+		return err;
+
+	printk(KERN_INFO "alsa_my_pcm registered.\n");
+	return 0;
+}
+
+static void __exit alsa_card_pi_i2s_exit(void)
+{
+	platform_driver_unregister(&snd_pi_i2s_driver);
+}
+
+module_init(alsa_card_pi_i2s_init)
+module_exit(alsa_card_pi_i2s_exit)
