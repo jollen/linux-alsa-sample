@@ -8,3 +8,4 @@ modules.*
 Module.*
 .tmp_versions
 *.mod.c
+*.wav

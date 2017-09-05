@@ -85,6 +85,7 @@ static int snd_mychip_playback_open(struct snd_pcm_substream *substream)
 
         runtime->hw = snd_mychip_playback_hw;
         /* more hardware-initialization will be done here */
+	printk(KERN_INFO "snd_mychip_playback_open\n");
         return 0;
 }
 
@@ -193,7 +194,7 @@ static int snd_mychip_pcm_new(struct mychip *mychip, int device,
 	struct snd_pcm_ops *ops;
 	int err;
 
-	err = snd_pcm_new(mychip->card, "Dummy PCM", device,
+	err = snd_pcm_new(mychip->card, "MultiTek PCM", device,
 			       substreams, substreams, &pcm);
 	if (err < 0)
 		return err;
@@ -202,7 +203,7 @@ static int snd_mychip_pcm_new(struct mychip *mychip, int device,
 	snd_pcm_set_ops(pcm, SNDRV_PCM_STREAM_PLAYBACK, ops);
 	pcm->private_data = mychip;
 	pcm->info_flags = 0;
-	strcpy(pcm->name, "Raspberry Pi PCM I2S");
+	strcpy(pcm->name, "MultiTek/Raspberry Pi PCM I2S");
 
 	return 0;
 }
@@ -254,6 +255,8 @@ static int snd_pi_i2s_probe(struct platform_device *devptr)
 
 	err = snd_card_create(index[devptr->id], id[devptr->id], THIS_MODULE,
 			      sizeof(struct mychip), &card);
+	if (err < 0)
+		return err;
 
 	mychip = card->private_data;
 	mychip->card = card;
@@ -262,8 +265,17 @@ static int snd_pi_i2s_probe(struct platform_device *devptr)
         if (err < 0)
 	    goto __nodev;
 
-	return 0;
+	strcpy(card->driver, "MultiTek/Raspberry Pi I2S PCM");
+	strcpy(card->shortname, "MultiTek/Pi I2s");
+	sprintf(card->longname, "MultiTek/Raspberry Pi I2S PCM Driver %i", devptr->id);
 
+	snd_card_set_dev(card, &devptr->dev);
+
+	err = snd_card_register(card);
+	if (err == 0) {
+		platform_set_drvdata(devptr, card);
+		return 0;
+	}
       __nodev:
 	snd_card_free(card);
 	return err;
@@ -271,7 +283,8 @@ static int snd_pi_i2s_probe(struct platform_device *devptr)
 
 static int snd_pi_i2s_remove(struct platform_device *devptr)
 {
-	printk(KERN_INFO "snd_pi_i2s_driver removed.\n");
+	snd_card_free(platform_get_drvdata(devptr));
+	platform_set_drvdata(devptr, NULL);
 	return 0;
 }
 
