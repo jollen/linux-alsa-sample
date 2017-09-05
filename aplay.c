@@ -24,7 +24,7 @@
 #include <alsa/asoundlib.h>
 #include <stdio.h>
 
-#define PCM_DEVICE "default"
+#define PCM_DEVICE "msmaudio"
 
 int main(int argc, char **argv) {
 	unsigned int pcm, tmp, dir;
