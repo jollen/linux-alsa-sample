@@ -31,6 +31,9 @@ MODULE_AUTHOR("Jollen Chen");
 MODULE_DESCRIPTION("PCM ALSA driver template");
 MODULE_LICENSE("GPL");
 
+static int index[SNDRV_CARDS] = SNDRV_DEFAULT_IDX;	/* Index 0-MAX */
+static char *id[SNDRV_CARDS] = SNDRV_DEFAULT_STR;	/* ID for this card */
+
 struct mychip {
 	struct snd_card *card;
 	struct snd_pcm *pcm;
@@ -183,6 +186,27 @@ static struct snd_pcm_ops snd_mychip_playback_ops = {
         .pointer =     snd_mychip_pcm_pointer,
 };
 
+static int snd_mychip_pcm_new(struct mychip *mychip, int device,
+					int substreams)
+{
+	struct snd_pcm *pcm;
+	struct snd_pcm_ops *ops;
+	int err;
+
+	err = snd_pcm_new(mychip->card, "Dummy PCM", device,
+			       substreams, substreams, &pcm);
+	if (err < 0)
+		return err;
+	mychip->pcm = pcm;
+	ops = &snd_mychip_playback_ops;
+	snd_pcm_set_ops(pcm, SNDRV_PCM_STREAM_PLAYBACK, ops);
+	pcm->private_data = mychip;
+	pcm->info_flags = 0;
+	strcpy(pcm->name, "Raspberry Pi PCM I2S");
+
+	return 0;
+}
+
 /* operators */
 static struct snd_pcm_ops snd_mychip_capture_ops = {
         .open =        snd_mychip_capture_open,
@@ -224,8 +248,25 @@ static int snd_mychip_new_pcm(struct mychip *chip)
 
 static int snd_pi_i2s_probe(struct platform_device *devptr)
 {
-	printk(KERN_INFO "snd_pi_i2s_driver registered.\n");
+	struct mychip *mychip;
+	struct snd_card *card;
+	int err;
+
+	err = snd_card_create(index[devptr->id], id[devptr->id], THIS_MODULE,
+			      sizeof(struct mychip), &card);
+
+	mychip = card->private_data;
+	mychip->card = card;
+
+        err = snd_mychip_pcm_new(mychip, 0 /* device number */, 1 /* number of streams */);
+        if (err < 0)
+	    goto __nodev;
+
 	return 0;
+
+      __nodev:
+	snd_card_free(card);
+	return err;
 }
 
 static int snd_pi_i2s_remove(struct platform_device *devptr)
