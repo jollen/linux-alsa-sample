@@ -85,11 +85,6 @@ static int my_soc_init(struct snd_soc_pcm_runtime *runtime)
 {
 	struct snd_soc_codec *codec = runtime->codec;
 
-	snd_soc_dapm_new_controls(&codec->dapm, my_soc_dapm_widgets,
-				  ARRAY_SIZE(my_soc_dapm_widgets));
-	snd_soc_dapm_add_routes(&codec->dapm, audio_map, ARRAY_SIZE(audio_map));
-	snd_soc_dapm_sync(&codec->dapm);
-
 	return 0;
 }
 
@@ -112,14 +107,55 @@ static struct snd_soc_card snd_my_soc_card = {
 	.num_links = ARRAY_SIZE(my_soc_dai),
 };
 
+static int snd_my_soc_codec_probe(struct snd_soc_codec *codec)
+{
+	return 0;
+}
+
+static int snd_my_soc_codec_suspend(struct snd_soc_codec *codec)
+{
+	return 0;
+}
+
+static struct snd_soc_codec_driver snd_my_soc_codec = {
+	.probe = 	snd_my_soc_codec_probe,
+	.suspend =	snd_my_soc_codec_suspend,
+
+	.component_driver = {
+	},
+};
+
+static struct snd_soc_dai_driver snd_my_soc_driver[] = {
+	{
+		.name = "mysoc-aif",
+		.capture = {
+		.stream_name = "Capture",
+		.channels_min = 1,
+		.channels_max = 1,
+		.rates = SNDRV_PCM_RATE_48000,
+		.formats = SNDRV_PCM_FMTBIT_S16_LE,
+		},
+	},
+};
+
 /*
  * This function will register the snd_soc_pcm_link drivers.
  */
 static int snd_my_soc_plat_probe(struct platform_device *pdev)
 {
+	int ret;
+
 	my_soc_data = kzalloc(sizeof(struct my_soc_data_t), GFP_KERNEL);
 
+	ret = snd_soc_register_codec(&pdev->dev, &snd_my_soc_codec, snd_my_soc_driver, ARRAY_SIZE(snd_my_soc_driver));
+	if (ret < 0) {
+		pr_err("snd_soc_register_codec failed\n");
+		goto err_soc_register;
+	}
+
 	return 0;
+err_soc_register:
+	return ret;
 }
 
 static int snd_my_soc_plat_remove(struct platform_device *pdev)

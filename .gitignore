@@ -9,3 +9,4 @@ Module.*
 .tmp_versions
 *.mod.c
 *.wav
+tags
