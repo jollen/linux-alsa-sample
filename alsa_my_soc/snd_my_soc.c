@@ -59,11 +59,29 @@ static int my_soc_hw_params(struct snd_pcm_substream *substream,
 	return 0;
 }
 
+// See: linux/sound/soc.h
 static struct snd_soc_ops my_soc_ops = {
 	.startup = my_soc_startup,
 	.shutdown = my_soc_shutdown,
 	.hw_params = my_soc_hw_params,
 	.hw_free = my_soc_hw_free,
+};
+
+
+int my_soc_dai_hw_params(struct snd_pcm_substream *substream,
+		 struct snd_pcm_hw_params *params, 
+                 struct snd_soc_dai *dai)
+{
+}
+
+int my_soc_dai_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
+{
+}
+
+// See: linux/sound/soc-dai.h
+static struct snd_soc_dai_ops my_soc_dai_ops = {
+	.set_fmt	= my_soc_dai_set_fmt,
+	.hw_params	= my_soc_dai_hw_params,
 };
 
 static const struct snd_soc_dapm_widget my_soc_dapm_widgets[] = {
@@ -122,6 +140,10 @@ static struct snd_soc_codec_driver snd_my_soc_codec = {
 	.suspend =	snd_my_soc_codec_suspend,
 
 	.component_driver = {
+		.dapm_widgets		= my_soc_dapm_widgets,
+		.num_dapm_widgets	= ARRAY_SIZE(my_soc_dapm_widgets),
+		.dapm_routes 		= audio_map,
+		.num_dapm_routes 	= ARRAY_SIZE(audio_map),
 	},
 };
 
@@ -135,6 +157,14 @@ static struct snd_soc_dai_driver snd_my_soc_driver[] = {
 		.rates = SNDRV_PCM_RATE_48000,
 		.formats = SNDRV_PCM_FMTBIT_S16_LE,
 		},
+		.playback = {
+		.stream_name = "Playback",
+		.channels_min = 1,
+		.channels_max = 1,
+		.rates = SNDRV_PCM_RATE_48000,
+		.formats = SNDRV_PCM_FMTBIT_S16_LE,
+		},
+		.ops = &my_soc_dai_ops,
 	},
 };
 
